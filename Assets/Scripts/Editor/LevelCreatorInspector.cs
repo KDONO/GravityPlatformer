@@ -6,7 +6,7 @@ using UnityEditor;
 // add a custom editor for board creation
 [CustomEditor(typeof(LevelCreator))]
 public class LevelCreatorInspector : Editor {
-    string[] _objectFilePathOptions = { "Floor", "Player", "GravAffectedObject", "VictoryGate" };
+    string[] _objectFilePathOptions = { "Floor", "Player", "SteelCrate", "VictoryGate", "SpikeBall", "Spikes" };
     int _index = 0;
     string _levelNumber;
 

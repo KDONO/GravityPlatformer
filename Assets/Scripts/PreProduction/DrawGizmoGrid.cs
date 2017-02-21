@@ -45,6 +45,7 @@ public class DrawGizmoGrid : MonoBehaviour
     // draw the grid :) 
     void OnDrawGizmos()
     {
+        // the grid extends are based on the width and height in the level creator
         lc = GetComponent<LevelCreator>();
         if(lc.boardWidth % 2 == 0)
         {

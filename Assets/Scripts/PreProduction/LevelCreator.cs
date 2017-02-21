@@ -13,6 +13,8 @@ public class LevelCreator : MonoBehaviour {
     public int boardWidth; // number of units in X direction in world space
     public int boardHeight; // number of units in Z direction in world space
     public Vector2 pos; // used to find specific point in board in case we wish to make modifications to the board
+    public Vector3 rot = Vector3.zero; // used to alter rotation values - default to 0,0,0
+    public float worldUnits = 1f; // used to alter scale values - default to 1 unity unit
     public int rectW; // width of the rectangle to make things
     public int rectH; // height of the rectangle to make things
 
@@ -23,10 +25,9 @@ public class LevelCreator : MonoBehaviour {
         get
         {
             // if we have a tile selection indicator, use that
-            if (GameObject.Find(indicatorPrefab.name) != null)
+            if (GameObject.Find(indicatorPrefab.name + "(Clone)") != null)
             {
-                Debug.Log("Ever true?");
-                GameObject instance = GameObject.Find(indicatorPrefab.name);
+                GameObject instance = GameObject.Find(indicatorPrefab.name + "(Clone)");
                 _indicator = instance.transform;
             }
             // else follow the normal patter of lazy loading
@@ -45,9 +46,9 @@ public class LevelCreator : MonoBehaviour {
     public LevelData levelData;
 
 
-    // change color if we are in our grid space or not
+    // change color of indicator if we are in our grid space or not
     Color _inBounds = new Color(0f, 1f, .38f, .3f); // light green, alpha'd heavily
-    Color _outOfBounds = new Color(1f, 79, .31f, .3f); // bright red-orange, alpha'd heavily
+    Color _outOfBounds = new Color(1f, .31f, .31f, .3f); // bright red-orange, alpha'd heavily
 
     #region Public
     // resets everything
@@ -60,10 +61,10 @@ public class LevelCreator : MonoBehaviour {
     }
 
     // add objects of the same type in a rect we want
-    public void AddObjects(string objPath)
+    public void AddObjects(string path)
     {
         Rect r = CreateRect();
-        AddRect(r, objPath);
+        AddRect(r, path);
     }
 
     // add objects of the same type in a rect we want
@@ -74,10 +75,10 @@ public class LevelCreator : MonoBehaviour {
     }
 
     // add objects and replace anything existing there
-    public void AddAndOverwriteObjects(string objPath)
+    public void AddAndOverwriteObjects(string path)
     {
         Rect r = CreateRect();
-        AddAndOverwriteRect(r, objPath);
+        AddAndOverwriteRect(r, path);
     }
 
     // lets a user save a level using the LevelData class since it's a ScriptableObject
@@ -87,7 +88,7 @@ public class LevelCreator : MonoBehaviour {
         bool check = UInt32.TryParse(levNum, out levelNumber);
         if (!check)
         {
-            Debug.Log("Invalid level number");
+            Debug.LogError("Invalid level number");
             return;
         }
 
@@ -99,16 +100,20 @@ public class LevelCreator : MonoBehaviour {
         // create the data for the board
         LevelData level = ScriptableObject.CreateInstance<LevelData>();
         // instantiate the lists of levelData
-        level.objs = new List<Vector2>();
-        level.objFilePaths = new List<string>();
+        level.positions = new List<Vector2>();
+        level.rotationEulers = new List<Vector3>();
+        level.scales = new List<Vector3>();
+        level.filePaths = new List<string>();
         // save tile parameters in those lists
         foreach (GameObject instance in objs.Values)
         {
-            level.objs.Add(instance.transform.position);
+            level.positions.Add(instance.transform.position);
+            level.rotationEulers.Add(instance.transform.rotation.eulerAngles);
+            level.scales.Add(instance.transform.localScale);
         }
         foreach(string s in objFilePaths.Values)
         {
-            level.objFilePaths.Add(s);
+            level.filePaths.Add(s);
         }
         
         // name and create the asset
@@ -127,21 +132,26 @@ public class LevelCreator : MonoBehaviour {
         }
 
         // if this isn't true, something is wrong, so exit the function
-        if (levelData.objs.Count != levelData.objFilePaths.Count)
+        if (levelData.positions.Count != levelData.filePaths.Count ||
+            levelData.positions.Count != levelData.rotationEulers.Count ||
+            levelData.positions.Count != levelData.scales.Count)
         {
-            Debug.LogError("levelData objs count and objFilePaths count do not match for: " + levelData.name);
+            Debug.LogError("levelData lists sizes do not match: " + levelData.name);
             return;
         }
 
-        // populate our tile dictionary with data from levelData
-        for (int i = 0; i < levelData.objs.Count; i++)
+        // create our game objects with the appropriate transforms and populate our dictionaries
+        for (int i = 0; i < levelData.positions.Count; i++)
         {
-            Vector2 v = levelData.objs[i];
-            string s = levelData.objFilePaths[i];
-            GameObject instance = CreateContent(v, s);
+            Vector2 p = levelData.positions[i];
+            Vector3 r = levelData.rotationEulers[i];
+            Vector3 s = levelData.scales[i];
+            string path = levelData.filePaths[i];
+            GameObject instance = CreateLoadedContent(p, r, s, path);
             objs.Add(instance.transform.position, instance);
-            objFilePaths.Add(instance.transform.position, s);
+            objFilePaths.Add(instance.transform.position, path);
         }
+
     }
 
     public void UpdateIndicator()
@@ -192,20 +202,20 @@ public class LevelCreator : MonoBehaviour {
     }
 
     // runs through a rect to add and overwrite objects
-    void AddAndOverwriteRect(Rect r, string objPath)
+    void AddAndOverwriteRect(Rect r, string path)
     {
         for (int y = (int)r.yMin; y < (int)r.yMax; y++)
         {
             for (int x = (int)r.xMin; x < (int)r.xMax; ++x)
             {
                 Vector2 v = new Vector2(x, y);
-                AddAndOverwriteSingle(v, objPath);
+                AddAndOverwriteSingle(v, path);
             }
         }
     }
 
     // adds a single object
-    void AddSingle(Vector2 v, string objPath)
+    void AddSingle(Vector2 v, string path)
     {
         // if something exists there, tell us what is is, then don't add anything
         if (objs.ContainsKey(v))
@@ -214,9 +224,9 @@ public class LevelCreator : MonoBehaviour {
             return;
         }
 
-        GameObject instance = CreateContent(v, objPath);
+        GameObject instance = CreateContent(v, path);
         objs.Add(v, instance);
-        objFilePaths.Add(v, objPath);
+        objFilePaths.Add(v, path);
     }
 
     // removes a single object
@@ -231,7 +241,7 @@ public class LevelCreator : MonoBehaviour {
     }
 
     // adds and overwrites a single object
-    void AddAndOverwriteSingle(Vector2 v, string objPath)
+    void AddAndOverwriteSingle(Vector2 v, string path)
     {
         if (objs.ContainsKey(v))
         {
@@ -239,17 +249,31 @@ public class LevelCreator : MonoBehaviour {
             RemoveSingle(v);
         }
 
-        GameObject instance = CreateContent(v, objPath);
+        GameObject instance = CreateContent(v, path);
         objs.Add(v, instance);
-        objFilePaths.Add(v, objPath);
+        objFilePaths.Add(v, path);
     }
 
-    // create the gameobject we want
-    GameObject CreateContent(Vector2 v, string objPath)
+    // create the gameobject we want while editing
+    GameObject CreateContent(Vector2 p, string path)
     {
-        GameObject prefab = Resources.Load<GameObject>("Prefabs/" + objPath);
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/" + path);
         GameObject instance = GameObject.Instantiate(prefab);
-        instance.transform.position = v;
+        instance.transform.position = p;
+        instance.transform.rotation = Quaternion.Euler(rot);
+        instance.transform.localScale = scaleToWorldUnits(instance, worldUnits);
+        instance.transform.parent = transform;
+        return instance;
+    }
+
+    // create the gameobject from loading
+    GameObject CreateLoadedContent(Vector2 p, Vector3 r, Vector3 s, string path)
+    {
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/" + path);
+        GameObject instance = GameObject.Instantiate(prefab);
+        instance.transform.position = p;
+        instance.transform.rotation = Quaternion.Euler(r);
+        instance.transform.localScale = s;
         instance.transform.parent = transform;
         return instance;
     }
@@ -267,6 +291,19 @@ public class LevelCreator : MonoBehaviour {
             AssetDatabase.CreateFolder("Assets/Resources", "Levels");
         // update our changes
         AssetDatabase.Refresh();
+    }
+
+    // scale an object to a desired world unit based off of the object's sprite renderer
+    // NOTE ONLY WORKS IF OBJECT HAS A SPRITERENDERER
+    Vector2 scaleToWorldUnits(GameObject g, float wu)
+    {
+        Bounds bounds = g.GetComponent<SpriteRenderer>().sprite.bounds;
+        if (bounds == null)
+            return Vector3.one;
+        float xSize = bounds.size.x;
+        float ySize = bounds.size.y;
+
+       return new Vector2(wu / xSize, wu / ySize);
     }
     #endregion
 }

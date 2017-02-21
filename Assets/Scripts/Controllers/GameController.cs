@@ -6,7 +6,7 @@ public class GameController : MonoBehaviour {
     static Directions _dir;
     PlayerController _player;
     public static bool gravTransitionState;
-
+    public static LayerMask terrainLayer;
 
     public static Directions Dir { get; set; }
     public static PlayerController Player { get; set; }
@@ -15,6 +15,7 @@ public class GameController : MonoBehaviour {
         _player = GameObject.FindGameObjectWithTag("Player").GetComponent<PlayerController>();
         gravTransitionState = true;
         _dir = Directions.South;
+        terrainLayer = LayerMask.GetMask("Terrain");
 	}
     // add states here - make classes
     // Play, Load, Pause, Victory, Gameover, Menu, 

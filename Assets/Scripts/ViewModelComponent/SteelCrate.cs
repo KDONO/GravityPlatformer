@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class GravAffectedObject : MonoBehaviour {
+public class SteelCrate : MonoBehaviour {
     Rigidbody2D _rb;
     Renderer _rend;
     bool _grounded;
@@ -22,6 +22,7 @@ public class GravAffectedObject : MonoBehaviour {
         else
             _rb.constraints = RigidbodyConstraints2D.FreezeAll;
         _grounded = isGrounded();
+        //Debug.Log("Grav Object grounded: " + _grounded);
     }
 
     void OnCollisionEnter2D(Collision2D col)
@@ -29,7 +30,10 @@ public class GravAffectedObject : MonoBehaviour {
         if (col.gameObject.CompareTag("Player"))
         {
             Transform groundCheck = col.gameObject.transform.GetChild(0);
-            if (GameController.gravTransitionState && !PhysicsUtilities.IsBelow(gameObject.transform, groundCheck))
+            Vector2 posOffset = (Vector2)transform.position + PhysicsUtilities.RendererOffsetForRaycasts(_rend);
+            // NEED TO FIND OUT HOW TO NOT DESTROY INSTANTLY WHILE IN GRAV TRANSITION
+            // FOR SOME REASON THE BELOW DOES NOT WORK
+            if (!GameController.gravTransitionState && PhysicsUtilities.IsBelow(groundCheck.position, posOffset))
             {
                 Destroy(col.gameObject);
             }
@@ -37,13 +41,15 @@ public class GravAffectedObject : MonoBehaviour {
         }
     }
 
+    // OBJECT SOMETIMES PENETRATES OTHERS
     // find out if the object is grounded
     bool isGrounded()
     {
         // for position, get the "bottom" edge in terms of the direction of gravity
         Vector2 position = (Vector2)transform.position + PhysicsUtilities.RendererOffsetForRaycasts(_rend);
+        Debug.DrawLine(transform.position, position);
         float dist = 0.1f;
-        RaycastHit2D hit = PhysicsUtilities.RaycastToGravity(position, dist);
+        RaycastHit2D hit = PhysicsUtilities.RaycastToGravity(position, dist, GameController.terrainLayer);
         if (hit.collider != null)
             return true;
 

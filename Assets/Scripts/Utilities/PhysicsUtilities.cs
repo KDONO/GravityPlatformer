@@ -28,24 +28,24 @@ public static class PhysicsUtilities {
     }
 
     // check if a is below b
-    public static bool IsBelow(Transform a, Transform b)
+    public static bool IsBelow(Vector2 a, Vector2 b)
     {
         switch (GameController.Dir)
         {
             case Directions.North:
-                if (a.position.y > b.position.y)
+                if (a.y > b.y)
                     return true;
                 break;
             case Directions.South:
-                if (a.position.y < b.position.y)
+                if (a.y < b.y)
                     return true;
                 break;
             case Directions.East:
-                if (a.position.x > b.position.x)
+                if (a.x > b.x)
                     return true;
                 break;
             case Directions.West:
-                if (a.position.x < b.position.x)
+                if (a.x < b.x)
                     return true;
                 break;
             default:

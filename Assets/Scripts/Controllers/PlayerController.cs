@@ -5,19 +5,18 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour {
     const float speed = 0.1f;
     const float jumpForce = 5f;
-    const float gravity = 9.81f;
+    //const float gravity = 9.81f;
 
-    public LayerMask terrainLayer;
+    [HideInInspector] public bool grounded;
 
     Transform _groundChecker;
     Rigidbody2D _rb;
     Renderer _rend;
-    bool _grounded;
     bool _idleOverride;
     float _idleCheck;
     Vector3 _lastPos;
 
-	void Start () {
+    void Start () {
         _groundChecker = transform.GetChild(0);
         _rb = GetComponent<Rigidbody2D>();
         _rb.freezeRotation = true;
@@ -29,23 +28,23 @@ public class PlayerController : MonoBehaviour {
         PhysicsUtilities.ApplyGravity(_rb);
         // only check for Grounded if we didn't override it with the idle check
         if(!_idleOverride)
-            _grounded = isGrounded();
+            grounded = isGrounded();
         // Do the following to resolve any times colliders hit, and the raycasts fail
         // if we do so, override the normal grounded check
         Vector3 currentPos = transform.position;
         _idleCheck += Time.deltaTime;
-        if((!_grounded || GameController.gravTransitionState) && _idleCheck >= .25f && currentPos == _lastPos)
+        if((!grounded || GameController.gravTransitionState) && _idleCheck >= .25f && currentPos == _lastPos)
         {
             //Debug.Log("In idle check");
             
-            _grounded = true;
+            grounded = true;
             GameController.gravTransitionState = false;
             _idleCheck = 0;
             _idleOverride = true;
         }
         _lastPos = currentPos;
 
-        //Debug.Log("grounded: " + _grounded);
+        //Debug.Log("grounded: " + grounded);
         //Debug.Log("gravTrans: " + GameController.gravTransitionState);
 
         HandleInput();
@@ -57,7 +56,7 @@ public class PlayerController : MonoBehaviour {
         
         // you can only change gravity if you are on the ground and not in ground transition
         // use the arrow keys
-        if (_grounded && !GameController.gravTransitionState)
+        if (grounded && !GameController.gravTransitionState)
         {
             if (Input.GetKeyDown(KeyCode.UpArrow) && GameController.Dir != Directions.North)
             {
@@ -74,14 +73,14 @@ public class PlayerController : MonoBehaviour {
                 _idleOverride = false;
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow) && GameController.Dir != Directions.South)
-            { 
+            {
                 GameController.Dir = Directions.South;
                 GameController.gravTransitionState = true;
                 StartCoroutine(Turn(GameController.Dir));
                 _idleOverride = false;
             }
             else if (Input.GetKeyDown(KeyCode.LeftArrow) && GameController.Dir != Directions.West)
-            { 
+            {
                 GameController.Dir = Directions.West;
                 GameController.gravTransitionState = true;
                 StartCoroutine(Turn(GameController.Dir));
@@ -163,6 +162,7 @@ public class PlayerController : MonoBehaviour {
         while (t != null)
         {
             GameController.gravTransitionState = true; // make sure _GameController.gravTransitionState remains true while we're animating
+            grounded = false;
             yield return null;
         }
     }
@@ -174,9 +174,9 @@ public class PlayerController : MonoBehaviour {
         float dist = 0.1f;                           // how far are we checking
         // check both ends and the center of the game object
         RaycastHit2D[] hits = new RaycastHit2D[] {
-            PhysicsUtilities.RaycastToGravity(position - new Vector2(_rend.bounds.size.x/2f, 0), dist, terrainLayer),
-            PhysicsUtilities.RaycastToGravity(position, dist, terrainLayer),
-            PhysicsUtilities.RaycastToGravity(position + new Vector2(_rend.bounds.size.x/2f, 0), dist, terrainLayer)
+            PhysicsUtilities.RaycastToGravity(position - new Vector2(_rend.bounds.size.x/2f, 0), dist, GameController.terrainLayer),
+            PhysicsUtilities.RaycastToGravity(position, dist, GameController.terrainLayer),
+            PhysicsUtilities.RaycastToGravity(position + new Vector2(_rend.bounds.size.x/2f, 0), dist, GameController.terrainLayer)
         };
 
         foreach(RaycastHit2D hit in hits)
