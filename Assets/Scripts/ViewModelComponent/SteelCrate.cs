@@ -30,7 +30,7 @@ public class SteelCrate : MonoBehaviour {
         if (col.gameObject.CompareTag("Player"))
         {
             Transform groundCheck = col.gameObject.transform.GetChild(0);
-            Vector2 posOffset = (Vector2)transform.position + PhysicsUtilities.RendererOffsetForRaycasts(_rend);
+            Vector2 posOffset = (Vector2)transform.position + PhysicsUtilities.OffsetToEdgeRenderer(_rend);
             // NEED TO FIND OUT HOW TO NOT DESTROY INSTANTLY WHILE IN GRAV TRANSITION
             // FOR SOME REASON THE BELOW DOES NOT WORK
             if (!GameController.gravTransitionState && PhysicsUtilities.IsBelow(groundCheck.position, posOffset))
@@ -46,7 +46,7 @@ public class SteelCrate : MonoBehaviour {
     bool isGrounded()
     {
         // for position, get the "bottom" edge in terms of the direction of gravity
-        Vector2 position = (Vector2)transform.position + PhysicsUtilities.RendererOffsetForRaycasts(_rend);
+        Vector2 position = (Vector2)transform.position + PhysicsUtilities.OffsetToEdgeRenderer(_rend);
         Debug.DrawLine(transform.position, position);
         float dist = 0.1f;
         RaycastHit2D hit = PhysicsUtilities.RaycastToGravity(position, dist, GameController.terrainLayer);

@@ -7,16 +7,16 @@ public class Spikes : Attachable
 {
     Directions _activeDirection; // direction when the spikes are active
     int _activeAttachableLayer; // the layer for ActiveAttachable
-    int _rotZValue; // rotation z value
+    int _zRot; // rotation z value
 
     void Start()
     {
-        _rotZValue = (int) transform.rotation.eulerAngles.z;
-        _activeAttachableLayer = LayerMask.NameToLayer("ActiveAttachable");
+        _zRot = (int) transform.rotation.eulerAngles.z;
+        _activeAttachableLayer = LayerMask.NameToLayer("ActiveSpike");
 
         // in what direction are the spikes active
         // spikes can only be in vary degrees of 90
-        switch (_rotZValue)
+        switch (_zRot)
         {
             case 0:
                 _activeDirection = Directions.South;
@@ -45,7 +45,7 @@ public class Spikes : Attachable
         }
         // otherwise, it is InactiveAttachable
         else
-            gameObject.layer = LayerMask.NameToLayer("InactiveAttachable");
+            gameObject.layer = LayerMask.NameToLayer("Inactive");
     }
 
     public override void OnCollisionEnter2D(Collision2D col)

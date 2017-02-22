@@ -68,23 +68,55 @@ public static class PhysicsUtilities {
         return RaycastToGravity(position, dist, int.MinValue);
     }
 
-    // for a single raycast, find out whether we need to find the length or the width
-    public static Vector2 RendererOffsetForRaycasts(Renderer rend)
+    // find the distance to the edge of the Renderer in the desired direction
+    public static Vector2 OffsetToEdgeRenderer(Renderer rend, Directions dir)
     {
-        switch (GameController.Dir)
+        switch (dir)
         {
             case Directions.North:
-                return new Vector2(0, rend.bounds.size.y / 2f);
+                return new Vector2(0, rend.bounds.size.y/2f);
             case Directions.South:
-                return new Vector2(0, -rend.bounds.size.y / 2f);
+                return new Vector2(0, -rend.bounds.size.y/2f);
             case Directions.East:
-                return new Vector2(rend.bounds.size.x / 2f, 0);
+                return new Vector2(rend.bounds.size.x/2f, 0);
             case Directions.West:
-                return new Vector2(-rend.bounds.size.x / 2f, 0);
+                return new Vector2(-rend.bounds.size.x/2f, 0);
             default:
                 break;
         }
 
         return Vector2.zero;
+    }
+
+    // overload OffsetToEdgeRenderer if we only care about the world direction
+    public static Vector2 OffsetToEdgeRenderer(Renderer rend)
+    {
+        return OffsetToEdgeRenderer(rend, GameController.Dir);
+    }
+
+    // find the distance to the edge of the Collider in the desired direction
+    public static Vector2 OffsetToEdgeCollider2D(Collider2D col, Directions dir)
+    {
+        switch (dir)
+        {
+            case Directions.North:
+                return new Vector2(0, col.bounds.size.y/2f);
+            case Directions.South:
+                return new Vector2(0, -col.bounds.size.y/2f);
+            case Directions.East:
+                return new Vector2(col.bounds.size.x/2f, 0);
+            case Directions.West:
+                return new Vector2(-col.bounds.size.x/2f, 0);
+            default:
+                break;
+        }
+
+        return Vector2.zero;
+    }
+
+    // overload OffsetToEdgeCollider2D if we only care about the world direction
+    public static Vector2 OffsetToEdgeCollider2D(Collider2D col)
+    {
+        return OffsetToEdgeCollider2D(col, GameController.Dir);
     }
 }
