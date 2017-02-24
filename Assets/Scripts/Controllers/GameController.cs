@@ -5,6 +5,7 @@ using UnityEngine;
 public class GameController : MonoBehaviour {
     static Directions _dir;
     PlayerController _player;
+    GameObject playerInstance;
     public static bool gravTransitionState;
     public static LayerMask terrainLayer;
 
@@ -16,7 +17,8 @@ public class GameController : MonoBehaviour {
         gravTransitionState = true;
         _dir = Directions.South;
         terrainLayer = LayerMask.GetMask("Terrain");
-	}
+        playerInstance = GameObject.FindGameObjectWithTag("Player");
+    }
     // add states here - make classes
     // Play, Load, Pause, Victory, Gameover, Menu, 
 }

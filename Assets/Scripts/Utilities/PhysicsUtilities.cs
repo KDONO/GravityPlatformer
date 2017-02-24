@@ -119,4 +119,40 @@ public static class PhysicsUtilities {
     {
         return OffsetToEdgeCollider2D(col, GameController.Dir);
     }
+
+    // returns the direction an object is facing based off of its zrotation
+    // use int for rotation to truncate
+    // opposite asks if you want the direction opposite of facing
+    public static Directions GetFacingDirection(int zRot, bool opposite)
+    {
+        switch (zRot)
+        {
+            case 0:
+                if (opposite)
+                    return Directions.South;
+                return Directions.North;
+            case 90:
+                if (opposite)
+                    return Directions.East;
+                return Directions.West;
+            case 180:
+                if (opposite)
+                    return Directions.North;
+                return Directions.South;
+            case 270:
+                if (opposite)
+                    return Directions.West;
+                return Directions.East;
+            default:
+                break;
+        }
+
+        return Directions.South;
+    }
+
+    // overload GetFacing Direction to default to getting the facing the direction
+    public static Directions GetFacingDirection(int zRot)
+    {
+        return GetFacingDirection(zRot, false);
+    }
 }

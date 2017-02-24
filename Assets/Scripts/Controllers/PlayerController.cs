@@ -7,7 +7,8 @@ public class PlayerController : MonoBehaviour {
     const float jumpForce = 5f;
     //const float gravity = 9.81f;
 
-    [HideInInspector] public bool grounded;
+    [HideInInspector] public bool grounded;     // is the player on the ground
+    [HideInInspector] public bool gravEnabled;  // is gravity enabled on the player
 
     Transform _groundChecker;
     Rigidbody2D _rb;
@@ -22,10 +23,14 @@ public class PlayerController : MonoBehaviour {
         _rb.freezeRotation = true;
         _rend = GetComponent<Renderer>();
         _idleOverride = false;
+        gravEnabled = true;
     }
 	
 	void FixedUpdate () {
-        PhysicsUtilities.ApplyGravity(_rb);
+        if (gravEnabled)
+            PhysicsUtilities.ApplyGravity(_rb);
+        else
+            _rb.velocity = Vector2.zero;
         // only check for Grounded if we didn't override it with the idle check
         if(!_idleOverride)
             grounded = isGrounded();
@@ -62,28 +67,28 @@ public class PlayerController : MonoBehaviour {
             {
                 GameController.Dir = Directions.North;
                 GameController.gravTransitionState = true;
-                StartCoroutine(Turn(GameController.Dir));
-                _idleOverride = false;
             }
             else if (Input.GetKeyDown(KeyCode.RightArrow) && GameController.Dir != Directions.East)
             {
                 GameController.Dir = Directions.East;
                 GameController.gravTransitionState = true;
-                StartCoroutine(Turn(GameController.Dir));
-                _idleOverride = false;
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow) && GameController.Dir != Directions.South)
             {
                 GameController.Dir = Directions.South;
                 GameController.gravTransitionState = true;
-                StartCoroutine(Turn(GameController.Dir));
-                _idleOverride = false;
             }
             else if (Input.GetKeyDown(KeyCode.LeftArrow) && GameController.Dir != Directions.West)
             {
                 GameController.Dir = Directions.West;
                 GameController.gravTransitionState = true;
-                StartCoroutine(Turn(GameController.Dir));
+            }
+
+            // only turn if we're in grav transition and gravity is enabled on the player
+            if(GameController.gravTransitionState)
+            {
+                if(gravEnabled)
+                    StartCoroutine(Turn(GameController.Dir));
                 _idleOverride = false;
             }
         }
@@ -141,7 +146,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     // turn so that you are standing correctly
-    IEnumerator Turn(Directions dir)
+    public IEnumerator Turn(Directions dir)
     {
         TransformLocalEulerTweener t = (TransformLocalEulerTweener)transform.RotateToLocal(dir.ToEuler(), 0.25f, EasingEquations.EaseInOutQuad);
 
@@ -161,7 +166,7 @@ public class PlayerController : MonoBehaviour {
 
         while (t != null)
         {
-            GameController.gravTransitionState = true; // make sure _GameController.gravTransitionState remains true while we're animating
+            GameController.gravTransitionState = true; // make sure GameController.gravTransitionState remains true while we're animating
             grounded = false;
             yield return null;
         }
