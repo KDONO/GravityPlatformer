@@ -7,52 +7,31 @@ public class LaserGun : Attachable {
     const float laserSizeX = .5f; // size of the laser in the X scale
 
     public bool firing; // are we firing
+    public bool continuous; // is this a continuous laser
 
     [SerializeField] GameObject laserBeamPrefab; // holds the prefab of the laser beam
     [SerializeField] LayerMask layerMask; // holds the bit mask of the ActiveAttachable layer
 
     GameObject _laserChild; // the laser beam object we'll make
-    Directions _facing; // what direciton is the gun facing
-    Directions _oppositeFacing; // the opposite of facing
-    int _zRot; // the zrotation of the gun
 
+    // call awake because the laser has to exist before anything else happens
     void Awake()
     {
-        _zRot = (int)transform.rotation.eulerAngles.z; // set z rotation
-
-        // set facing and opposite facing depending on the z rotation
-        switch (_zRot)
-        {
-            case 0:
-                _facing = Directions.North;
-                _oppositeFacing = Directions.South;
-                break;
-            case 90:
-                _facing = Directions.West;
-                _oppositeFacing = Directions.East;
-                break;
-            case 180:
-                _facing = Directions.South;
-                _oppositeFacing = Directions.North;
-                break;
-            case 270:
-                _facing = Directions.East;
-                _oppositeFacing = Directions.West;
-                break;
-            default:
-                break;
-        }
+        SetFacingsAndZRot();
+        AttachToTile();
 
         // make the laser child
         _laserChild = CreateLaser();
     }
 
-    void Start()
+    public override void Start()
     {
+        // DO NOT CALL BASE START HERE BECAUSE WE USE AWAKE TO SET UP THE DATA
         // start off firing
         firing = true;
         // start our counting coroutine
-        StartCoroutine("Tick");
+        if(!continuous)
+            StartCoroutine("Tick");
     }
 
     void FixedUpdate()
@@ -74,7 +53,7 @@ public class LaserGun : Attachable {
 
     // if the player collids with the laser, they die
     // no need to check if the laser is firing due to the layer mask changing in FixedUpdate
-    public override void OnCollisionEnter2D(Collision2D col)
+    void OnCollisionEnter2D(Collision2D col)
     {
         if (col.gameObject.CompareTag("Player"))
         {
@@ -112,15 +91,12 @@ public class LaserGun : Attachable {
             return;
 
         // check for any object that's not an ActiveAttachable 
-        RaycastHit2D hit = Physics2D.Raycast(_laserChild.transform.position, _facing.ToVector2(), Mathf.Infinity, ~layerMask);
+        RaycastHit2D hit = Physics2D.Raycast(_laserChild.transform.position, facing.ToVector2(), Mathf.Infinity, ~layerMask);
 
         if(hit.collider != null)
         {
-            //Debug.Log(hit.collider.gameObject.name);
-            //Debug.Log(hit.collider.bounds);
-            //Debug.Log(transform.position.x);
             // calculate where the laser will stop based off the offset edge of the object we hit
-            Vector2 endpoint = (Vector2)hit.collider.gameObject.transform.position + PhysicsUtilities.OffsetToEdgeCollider2D(hit.collider, _oppositeFacing);
+            Vector2 endpoint = (Vector2)hit.collider.gameObject.transform.position + PhysicsUtilities.OffsetToEdgeCollider2D(hit.collider, oppositeFacing);
             // distance between the gun beginning of the laser and the endpoint
             float dist = Mathf.Sqrt(Mathf.Pow(_laserChild.transform.position.x - endpoint.x, 2) + Mathf.Pow(_laserChild.transform.position.y - endpoint.y, 2));
             // set localScale of the laser - always in y because of how parent-child works on transforms in Unity
